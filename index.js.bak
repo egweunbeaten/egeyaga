@@ -1,0 +1,491 @@
+const Discord = require('discord.js');/// Developer By Ross
+const discord = require('discord.js');/// Developer By Ross
+const client = new Discord.Client();/// Developer By Ross
+const config = require('./config.json');/// Developer By Ross
+const chalk = require('chalk');/// Developer By Ross
+const moment = require('moment');/// Developer By Ross
+const util = require('discord.js');/// Developer By Ross
+const Client = require('discord.js');/// Developer By Ross
+const fs = require('fs');/// Developer By Ross
+const db = require('croxydb');/// Developer By Ross
+const data = require("croxydb");/// Developer By Ross
+const http = require('http');
+require('./util/eventLoader.js')(client);
+const path = require('path');
+const disbut = require("discord-buttons")
+disbut(client);
+require("./ExtendedMessage");
+const cooldowns = new Discord.Collection();/// Developer By Ross
+client.invites = new Map();
+var prefix = config.prefix;
+
+const log = message => {
+    console.log(`${message}`);
+};
+/// Developer By Ross
+client.commands = new Discord.Collection();
+client.aliases = new Discord.Collection();
+fs.readdir('./komutlar/', (err, files) => {/// Developer By Ross
+    if (err) console.error(err);
+    log(`${files.length} komut yüklenecek.`);
+    files.forEach(f => {
+        let props = require(`./komutlar/${f}`);/// Developer By Ross
+        log(`Yüklenen komut: ${props.help.name}.`);
+        client.commands.set(props.help.name, props);
+        props.conf.aliases.forEach(alias => {
+            client.aliases.set(alias, props.help.name);
+        });
+    });
+});
+
+
+
+
+client.reload = command => {/// Developer By Ross
+    return new Promise((resolve, reject) => {
+        try {
+            delete require.cache[require.resolve(`./komutlar/${command}`)];
+            let cmd = require(`./komutlar/${command}`);
+            client.commands.delete(command);
+            client.aliases.forEach((cmd, alias) => {
+                if (cmd === command) client.aliases.delete(alias);
+            });
+            client.commands.set(command, cmd);/// Developer By Ross
+            cmd.conf.aliases.forEach(alias => {
+                client.aliases.set(alias, cmd.help.name);
+            });
+            resolve();
+        } catch (e) {
+            reject(e);/// Developer By Ross
+        }
+    });
+};
+
+client.load = command => {
+    return new Promise((resolve, reject) => {
+        try {
+            let cmd = require(`./komutlar/${command}`);/// Developer By Ross
+            client.commands.set(command, cmd);
+            cmd.conf.aliases.forEach(alias => {
+                client.aliases.set(alias, cmd.help.name);
+            });
+            resolve();/// Developer By Ross
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
+
+/// Developer By Ross
+
+client.unload = command => {/// Developer By Ross
+    return new Promise((resolve, reject) => {
+        try {
+            delete require.cache[require.resolve(`./komutlar/${command}`)];
+            let cmd = require(`./komutlar/${command}`);
+            client.commands.delete(command);
+            client.aliases.forEach((cmd, alias) => {
+                if (cmd === command) client.aliases.delete(alias);/// Developer By Ross
+            });
+            resolve();
+        } catch (e) {/// Developer By Ross
+            reject(e);
+        }
+    });
+};
+
+client.elevation = message => {
+    if (!message.guild) {/// Developer By Ross
+        return;
+    }/// Developer By Ross
+    let permlvl = 0;
+    if (message.member.hasPermission("MANAGE_MESSAGES")) permlvl = 1;
+    if (message.member.hasPermission("KICK_MEMBERS")) permlvl = 2;
+    if (message.member.hasPermission("BAN_MEMBERS")) permlvl = 3;/// Developer By Ross
+    if (message.member.hasPermission("ADMINISTRATOR")) permlvl = 4;
+    if (message.author.id === config.sahip) permlvl = 5;
+    if (message.author.id === config.sahip) permlvl = 6;
+  return permlvl;
+};/// Developer By Ross
+
+var regToken = /[\w\d]{24}\.[\w\d]{6}\.[\w\d-_]{27}/g;
+// client.on('debug', e => {
+//   console.log(chalk.bgBlue.green(e.replace(regToken, 'that was redacted')));
+// });
+
+client.on('warn', e => {
+    console.log(chalk.bgYellow(e.replace(regToken, 'that was redacted')));
+});
+
+client.on('error', e => {
+    console.log(chalk.bgRed(e.replace(regToken, 'that was redacted')));
+});
+/// Developer By Ross
+client.login(config.token);/// Developer By Ross
+///fake-ayril
+client.on('message', async message => {
+if (message.content === '!fk') {/// Developer By Ross
+  client.emit('guildMemberAdd', message.member || await message.guild.fetchMember(message.author));
+    }
+});
+client.on('message', async message => {
+if (message.content === '!fa') {/// Developer By Ross
+  client.emit('guildMemberRemove', message.member || await message.guild.fetchMember(message.author));
+    }
+});
+////reklam-engel
+client.on("message", async msg => {
+ const reklama = db.fetch(`reklamK.${msg.channel.id}`)
+  if (!reklama) return
+    const kelime5 = ["discord.gg", "dsc.gg", "discord.me", "discordapp.com", "discord.io", "discord.tk"];
+  if (kelime5.some(reklam => msg.content.includes(reklam))) {
+    if (msg.member.hasPermission("ADMINISTRATOR")) {
+      return;
+    }
+   msg.delete({timeout:1});
+    const Embed = new Discord.MessageEmbed()
+    .setTitle(`${config.no} | Uyarı!`)
+    .setDescription(`${msg.author} Bu Sunucuda Reklam Yasak!`)
+    msg.channel.send(Embed).then(msg => msg.delete({timeout:4000}));
+  }
+}
+)
+////link engel
+client.on("message", async msg => {
+ const reklama = db.fetch(`linkK.${msg.channel.id}`)
+  if (!reklama) return
+    const kelime5 = ["www.", ".me", "http:", ".com", "https:"];
+  if (kelime5.some(reklam => msg.content.includes(reklam))) {
+    if (msg.member.hasPermission("ADMINISTRATOR")) {
+      return;
+    }
+    
+   msg.delete({timeout:1});
+    const Embed = new Discord.MessageEmbed()
+    .setTitle(`${config.no} | Uyarı!`)
+    .setDescription(`${msg.author} Bu Sunucuda Link Göndermek Yasak!`)
+    msg.channel.send(Embed).then(msg => msg.delete({timeout:4000}));
+  }
+})
+
+//otorol
+client.on("guildMemberAdd", async cmember => {
+if(!cmember.guild) return
+if(cmember.user.bot) return
+    let cveri = await db.fetch(`cotorol.${cmember.guild.id}`)
+if(!cveri) return
+    let crol = cmember.guild.roles.cache.get(cveri.rol)
+if(!crol) return
+    cmember.roles.add(crol.id)
+    })
+////gelen-giden
+client.on('guildMemberAdd', (member) => {
+    let kanal = db.fetch(`gelengiden.${member.guild.id}`);
+    if(!kanal) return;
+member.guild.channels.cache.get(`${kanal}`).send(`<@!${member.user.id}>`)
+    member.guild.channels.cache.get(`${kanal}`).send(
+      new Discord.MessageEmbed()
+    .setColor("GREEN")
+    .setDescription(`
+> ${config.gir} | **${member.user.username}** Sunucuya Katıldı!
+> Kullanıcı ID: **${member.user.id}**
+`)
+      )
+  });
+  
+  client.on('guildMemberRemove', (member) => {
+    let kanal = db.fetch(`gelengiden.${member.guild.id}`);
+    if(!kanal) return;
+    member.guild.channels.cache.get(`${kanal}`).send(
+      new Discord.MessageEmbed()
+      .setColor("ORANGE")
+      .setDescription(`
+> ${config.cik} | **${member.user.username}** Sunucudan Ayrıldı!
+> Kullanıcı ID: **${member.user.id}**   
+`)
+      )
+  });
+  ////ticket
+{
+    const cdb = require("croxydb")
+    client.on("clickButton", async button => {
+    const disbut = require("discord-buttons");
+    
+    //------------\\
+    const evet = new disbut.MessageButton()
+    .setStyle("green")
+    .setLabel("Evet")
+    .setID("Evet");
+    const hayır = new disbut.MessageButton()
+    .setStyle("red")
+    .setLabel("Hayır")
+    .setID("Hayır");
+    const geriyükle = new disbut.MessageButton()
+    .setStyle("green")
+    .setLabel("Geri Yükle")
+    .setID("GeriYükle");
+    const sil = new disbut.MessageButton()
+    .setStyle("red")
+    .setLabel("Desteği Kapat")
+    .setID("DesteğiKapat");
+    const kilit = new disbut.MessageButton()
+    .setStyle("grey")
+    .setLabel("Kapat")
+    .setEmoji("🔒")
+    .setID("Kilit");
+    //------------\\
+    
+    //------------\\
+    let member = button.guild.members.cache.get(button.clicker.user.id)
+    let kanal  = button.guild.channels.cache.get(button.channel.id)
+    let data   = await cdb.get(`destekkullanıcı_${member.id}`);
+    let data2  = await cdb.get(`destekkanal_${kanal.id}`);
+    let user   = button.guild.members.cache.get(data2);
+    let yetkirol = button.guild.roles.cache.get("892809473427656757")
+    let kate = "910195716796841984"
+    //------------\\
+    
+    //------------\\
+    if(button.id === "ticket"){
+    if(data) return button.reply.send("> **Başarasız!** Zaten aktif destek talebiniz bulunuyor. **Kanal:** <#" + data +">", true);
+    
+    button.reply.think(true).then(async a => {
+    setTimeout(async()=> {
+    
+    button.guild.channels.create('destek-' + member.user.username , { type: 'text', reason: 'Destek '+ member.user.tag }).then(async c => {
+    c.setParent(kate);
+    
+    await cdb.set(`destekkanal_${c.id}`, member.id);
+    await cdb.set(`destekkullanıcı_${member.id}`, c.id);
+    
+                let role = button.guild.roles.cache.find(a => a.name === '@everyone')      
+              await  c.createOverwrite(role, {
+                  SEND_MESSAGES: false,
+                  VIEW_CHANNEL: false
+                });
+              await  c.createOverwrite(yetkirol.id, {
+                  SEND_MESSAGES: true,
+                  VIEW_CHANNEL: true
+                });
+              await  c.createOverwrite(member.id, {  
+                  SEND_MESSAGES: true,
+                  VIEW_CHANNEL: true
+                })
+    
+    a.edit("> **Başarılı!** Destek talebiniz oluşturuldu. **Kanal:** <#" + c.id +">")
+    await c.send(`> ${member.user}, Hoş Geldin destek ekibimiz seninle ilgilenecektir. || @everyone - @here ||`, kilit)
+    }, 2000)
+    })
+    });
+    
+    }
+    //------------\\
+    
+    //------------\\
+    if(button.id === "Kilit"){
+    button.message.edit(`> **Dikkat!** Destek talebini kapatmak istediğine emin misin?`,{
+    buttons: [evet, hayır]
+    })
+    
+    button.reply.defer()
+    }
+    //------------\\
+    
+    //------------\\
+    if(button.id === "Evet"){
+    
+     await      kanal.createOverwrite(user, {  
+                  SEND_MESSAGES: false,
+                  VIEW_CHANNEL: false
+                })
+    
+    await button.message.delete()
+    await button.channel.send("> **Kapalı!** <@" + member + `> Tarafından destek talebi kapatıldı.`,{
+    buttons: [geriyükle, sil]
+    })
+    
+    await kanal.setName("kapalı-"+ user.user.username)
+    
+    button.reply.defer()
+    }
+    //------------\\
+    
+    //------------\\
+    if(button.id === "GeriYükle"){
+              await  kanal.createOverwrite(user, {  
+                  SEND_MESSAGES: true,
+                  VIEW_CHANNEL: true
+                })
+    
+    await button.channel.send("> **Dikkat!** <@" + user + `> Destek talebi tekrar açıldı.`,{
+    buttons: [kilit]
+    })
+    
+    await kanal.setName("destek-"+ user.user.username)
+    
+    await button.message.delete()
+    button.reply.defer()
+    }
+    //------------\\
+    
+    //------------\\
+    if(button.id === "DesteğiKapat"){
+    await cdb.delete(`destekkanal_${kanal.id}`);
+    await cdb.delete(`destekkullanıcı_${member.id}`);
+    
+    button.channel.delete()
+    button.reply.defer()
+    }
+    //------------\\
+    
+    //------------\\
+    if(button.id === "Hayır"){
+    button.message.edit("> <@" + user + `> Destek ekibimiz seninle ilgilenecek. || @everyone - @here ||`,  kilit)
+    
+    button.reply.defer()
+    }
+    //------------\\
+    
+    }); 
+    
+    client.on("guildMemberRemove", async member => {
+    
+    //------------\\
+    let data   = await cdb.get(`destekkullanıcı_${member.id}`);
+    let data2  = await cdb.get(`destekkanal_${data}`);
+    let kanal  = member.guild.channels.cache.get(data)
+    //------------\\
+    
+    if(!data) return;
+    
+    //------------\\
+    await cdb.delete(`destekkanal_${data.id}`);
+    await cdb.delete(`destekkullanıcı_${member.id}`);
+    
+    kanal.delete()
+    //------------\\
+    
+    })
+    client.on("channelDelete", async channel => {
+    
+    //------------\\
+    let data  = await cdb.get(`destekkanal_${channel.id}`);
+    let data2   = await cdb.get(`destekkullanıcı_${data}`);
+    //------------\\
+    
+    if(!data) return;
+    
+    //------------\\
+    await cdb.delete(`destekkanal_${channel.id}`);
+    await cdb.delete(`destekkullanıcı_${data}`);
+    
+    //------------\\
+    
+    })
+    }
+
+/// Developer By Ross
+/// Developer By Ross
+/// Developer By Ross
+/// Developer By Ross
+/// Developer By Ross
+/// Developer By Ross
+/// Developer By Ross
+/// Developer By Ross
+//otocevap
+client.on("message", async message => {
+  if (message.author.bot) return;
+   let yazılar = db.fetch(`${message.guild.id}.otocevap.yazılar`)
+   let cevaplar = db.fetch(`${message.guild.id}.otocevap.cevaplar`)
+  var efe = ""
+  let sunucuadı = message.guild.name
+  let üyesayı = message.guild.members.cache.size
+      for (var i = 0; i < (db.fetch(`${message.guild.id}.otocevap.yazılar`) ? db.fetch(`${message.guild.id}.otocevap.yazılar`).length : 0); i++) {
+    if (message.content.toLowerCase() == yazılar[i].toLowerCase()) {
+        efe += `${cevaplar[i].replace("{sunucuadı}", `${sunucuadı}`).replace("{üyesayı}", `${üyesayı}`)}`
+        message.ynt(`${efe}`)
+    }
+}
+})
+client.on("guildMemberAdd", member => {
+  let guild = member.guild;
+  let kanal = "895433135871914024"
+  let kayıtçı = "895437073127985193"
+  let aylartoplam = {
+    "01": "Ocak",
+    "02": "Şubat",
+    "03": "Mart",
+    "04": "Nisan",
+    "05": "Mayıs",
+    "06": "Haziran",
+    "07": "Temmuz",
+    "08": "Ağustos",
+    "09": "Eylül",
+    "10": "Ekim",
+    "11": "Kasım",
+    "12": "Aralık"
+  };
+  let aylar = aylartoplam;
+
+  let user = client.users.cache.get(member.id);
+  require("moment-duration-format");
+
+  const kurulus = new Date().getTime() - user.createdAt.getTime();
+  const ayyy = moment.duration(kurulus).format("M");
+  var kontrol = [];
+
+  if (ayyy < 1) {
+    kontrol = `**Şüpheli** | ${config.no}`;
+  }
+  if (ayyy > 1) {
+    kontrol = `**Güvenilir** | ${config.yes}`;
+  }
+
+  if (!kanal) return;
+  const embed = new Discord.MessageEmbed()
+    .setThumbnail(
+      user.avatarURL({
+        dynamic: true,
+        format: "gif",
+        format: "png",
+        format: "jpg",
+        size: 2048
+      })
+    )
+
+    .setDescription(
+      `${config.yldz} | **Hoşgeldin!** ${
+        member.user
+      }, seninle beraber **${
+        guild.memberCount
+      }** kişi olduk! \n${config.yldz} | Kaydının yapılması için  __Oyun İçi Karakterinin__ **Ad** ve **Soyad** Yazman Yeterli. \n${config.yldz} | Hesap Kuruluş: **${moment(
+        user.createdAt
+      ).format("DD")} ${aylar[moment(user.createdAt).format("MM")]} ${moment(
+        user.createdAt
+      ).format(
+        "YYYY HH:mm:ss"
+       )}** \n${config.yldz} | Bu vatandaş: ${kontrol} \n${config.yldz} | <@&${kayıtçı}> Rolundeki Yetkililer Sizinle İlgilecektir
+
+  `
+    );
+
+  
+  client.channels.cache.get(kanal).send(embed);
+  client.channels.cache.get(kanal).send(`<@&${kayıtçı}>`);
+});
+
+
+client.on('message', msg => {
+  if (msg.content === 'aktıf') {
+    msg.reply(new Discord.MessageEmbed()
+    .setColor("RANDOM") // 
+    .setTitle("Sunucumuz Aktif Giriş Yapabilirsiniz Server İp  31.210.39.12") // başlık kısmımız
+    .setDescription(`Pingim Ölçülüyor`) // açıklama 
+    .setFooter("www.rage-mta.com") // en alt kısım
+    
+    .setImage("https://cdn.discordapp.com/attachments/874868999995916330/947444493618143252/aktif.gif") // altta bulunan kocaman resim
+    .setTimestamp() // en sağ altta saati söyler
+    )
+  }
+})
